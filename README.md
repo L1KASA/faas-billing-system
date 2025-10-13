@@ -1,5 +1,11 @@
 # Faas Billing System
 
+## Developer staff
+* [selivanova-a](https://github.com/selivanova-a) - Frontend Developer
+* [h4cktivist](https://github.com/h4cktivist) - Backend Developer
+* [L1KASA](https://github.com/L1KASA) - Backend Developer
+* [Arigos](https://t.me/Arigos) - Графический дизайнер
+
 ## Установка и запуск
 ### 1. Создать виртуальное окружение
 #### Windows:
