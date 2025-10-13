@@ -15,9 +15,9 @@ class User(AbstractUser):
         JPY = 'JPY',
 
     class UserType(models.TextChoices):
-        CLIENT = 'CLIENT',
-        EMPLOYEE = 'EMPLOYEE',
-        ADMIN = 'ADMIN',
+        CLIENT = 'CLIENT', 'Client',
+        EMPLOYEE = 'EMPLOYEE', 'Employee',
+        ADMIN = 'ADMIN', 'Admin',
 
     username = None
     email = models.EmailField(
@@ -65,11 +65,13 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Updated at')
 
     USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
 
     class Meta:
+        db_table = 'users'
         indexes = [
             models.Index(fields=['email']),
             models.Index(fields=['phone']),
@@ -95,7 +97,7 @@ class User(AbstractUser):
         return self.is_superuser
 
 
-class Client(models.Model):
+class ClientUser(models.Model):
     """Model for client user"""
     user = models.OneToOneField(
         User,
@@ -114,14 +116,14 @@ class Client(models.Model):
     )
 
     class Meta:
-        db_table = 'user_client'
+        db_table = 'user_clients'
 
 
 class EmployeeUser(models.Model):
     """Model for staff user"""
     class StaffRoles(models.TextChoices):
-        MANAGER = 'MANAGER',
-        SUPPORT = 'SUPPORT',
+        MANAGER = 'MANAGER', 'Manager',
+        SUPPORT = 'SUPPORT', 'Support',
 
     user = models.OneToOneField(
         User,
@@ -142,7 +144,7 @@ class EmployeeUser(models.Model):
     )
 
     class Meta:
-        db_table = 'user_employee'
+        db_table = 'user_employees'
 
     @property
     def is_manager(self):
