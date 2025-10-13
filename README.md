@@ -18,6 +18,9 @@ pip install -r requirements.txt
 ````
 #### 3. Создать файл .env
 Скопировать и заполнить по образцу .env.example
+
+**P.S.** Секретный ключ Django для dev среды генерируется автоматически
+
 #### 4. Применить миграции
 ````
 python manage.py migrate
