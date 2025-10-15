@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Function Details</title>
+</head>
+<body>
+    <h1>Function: {{ function.name }}</h1>
+
+    <a href="{% url 'functions:function_list' %}">Back to Functions</a>
+
+    <div>
+        <strong>Name:</strong> {{ function.name }}<br>
+        <strong>Status:</strong> {{ function.status }}<br>
+        <strong>Docker Image:</strong> {{ function.docker_image }}<br>
+        <strong>Scale:</strong> {{ function.min_scale }} - {{ function.max_scale }}<br>
+        {% if function.url %}
+            <strong>URL:</strong> <a href="{{ function.url }}" target="_blank">{{ function.url }}</a><br>
+        {% endif %}
+        <strong>Created:</strong> {{ function.created_at }}<br>
+        <strong>Updated:</strong> {{ function.updated_at }}
+    </div>
+
+    <div>
+        <a href="{% url 'functions:delete_function' function.id %}">Delete Function</a>
+    </div>
+</body>
+</html>

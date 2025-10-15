@@ -6,7 +6,12 @@
 * [L1KASA](https://github.com/L1KASA) - Backend Developer
 * [Arigos](https://t.me/Arigos) - Graphic Designer
 
-## Установка и запуск
+## Требования к окружению:
+- ОЗУ: 8 GB (рекомендуется: 16 GB)
+- CPU: 4 ядра
+- Диск: 50 GB свободного места
+
+## Установка и запуск Django
 ### 1. Создать виртуальное окружение
 #### Windows:
 ````
@@ -35,14 +40,162 @@ python manage.py migrate
 ```
 python manage.py createsuperuser
 ```
-### 4. Запустить сервер 
+### 6. Запустить сервер 
 ```
 python manage.py runserver
 ```
-### 6. Открыть в браузере
+### 7. Открыть в браузере
 * Главная страница: http://127.0.0.1:8000/users/
 * Админка: http://127.0.0.1:8000/admin/
 
-## Структура проекта
+## Полная инструкция для Windows
+### Установить необходимые инструменты
+#### Docker Desktop
+#### Git Bash
+#### Python 3.11+
 
+### Установить Knative через Git Bash
+```
+# 1. Скачать скрипт установки Knative
+curl -LO https://raw.githubusercontent.com/your-repo/install_knative_1_17_kourier.sh
+
+# 2. Дать права на выполнение
+chmod +x install_knative_1_17_kourier.sh
+
+# 3. Запустить установку
+./install_knative_1_17_kourier.sh
+```
+### Если скрипта нет, установить вручную
+```
+# Установка Knative вручную
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-crds.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-core.yaml
+kubectl apply -f https://github.com/knative/net-kourier/releases/download/knative-v1.17.0/kourier.yaml
+
+# Настройка сети
+kubectl patch configmap/config-network \
+  --namespace knative-serving \
+  --type merge \
+  --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
+
+# Настройка домена
+kubectl patch configmap/config-domain \
+  --namespace knative-serving \
+  --type merge \
+  --patch '{"data":{"knative.demo.com":""}}'
+```
+### Настроить и поднять проект Django (выше прямиком до запуска сервера)
+### Проверить что Knative и тестовый сервис работают
+```
+kubectl get pods -n knative-serving
+
+curl -H "Host: echo.default.knative.demo.com" "http://localhost:80"
+```
+### В браузере открыть: http://localhost:8000/functions/
+### Деплой функции через Django
+#### Нажать "Deploy New Function"
+```
+Name: echo-server
+Docker Image: ealen/echo-server:latest  
+Min Scale: 0
+Max Scale: 3
+
+Name: hello-python
+Docker Image: python:3.11-slim
+Min Scale: 0
+Max Scale: 2
+```
+### Проверить в Git Bash
+```
+kubectl get ksvc
+kubectl get pods -l serving.knative.dev/service=test-function
+```
+### Тестирование функции
+#### После деплоя протестировать
+```
+# В Git Bash с port-forward
+kubectl port-forward -n kourier-system service/kourier 8080:80
+
+# В другом окне Git Bash
+curl -H "Host: test-function.default.knative.demo.com" "http://localhost:8080"
+
+Или в PowerShell:
+# Если port-forward работает на 8080
+curl.exe -H "Host: test-function.default.knative.demo.com" http://localhost:8080
+```
+### 🚨 Решение проблем на Windows
+```
+# Попробовать использовать другой порт
+kubectl port-forward -n kourier-system service/kourier 8081:80
+
+# Если Django не видит Kubernetes:
+# Проверьте контекст в Git Bash
+kubectl config get-contexts
+kubectl config use-context docker-desktop
+
+# Проверьте что kubectl работает
+kubectl get nodes
+```
+### ✅ Быстрая проверка работоспособности
+В Git Bash:
+```
+# 1. Проверить Kubernetes
+kubectl get nodes
+
+# 2. Проверить Knative
+kubectl get pods -n knative-serving
+
+# 3. Тест функции
+kubectl get ksvc
+
+# 4. Запустите port-forward
+kubectl port-forward -n kourier-system service/kourier 8080:80
+```
+В браузере: http://localhost:8000/functions/
+В PowerShell:
+```
+# Тест функции
+curl.exe -H "Host: test-function.default.knative.demo.com" http://localhost:8080
+```
+## Структура проекта
+```
+faas-billing-system/
+├── manage.py
+├── Dockerfile
+├── test_function.py
+├── requirements.txt
+├── .env
+├── .env.example
+├── faas_billing/
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+├── functions/
+│   ├── models.py
+│   ├── views.py
+│   ├── knative_manager.py
+│   └── urls.py
+├── users/
+│   ├── models.py
+│   ├── backencds.py
+│   ├── exceptions.py
+│   ├── mixins.py
+│   ├── permissions.py
+│   ├── services.py
+│   ├── views.py
+│   └── urls.py
+├── templates/
+└── k8s/
+    ├── postgres.yaml
+    ├── ingress.yaml
+    ├── secrets.yaml
+    └── django-deployment.yaml
+```
 ## Основные возможности
+- ✅ **Деплой FaaS функций** через веб-интерфейс
+- ✅ **Автоматическое масштабирование** (от 0 до N подов)
+- ✅ **Управление функциями** (создание, просмотр, удаление)
+- ✅ **Вызов функций** по уникальным URL
+- ✅ **Интеграция с Kubernetes** через Django
+
