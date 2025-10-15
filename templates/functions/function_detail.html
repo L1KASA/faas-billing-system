@@ -18,7 +18,45 @@
         {% endif %}
         <strong>Created:</strong> {{ function.created_at }}<br>
         <strong>Updated:</strong> {{ function.updated_at }}<br>
-        <strong>Metrics:</strong> {{ metrics.data.summary }}
+        <strong>Metrics:</strong>
+        <table>
+            <thead>
+                <tr>
+                    <th style="padding: 8px; text-align: left;">Metric</th>
+                    <th style="padding: 8px; text-align: left;">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td style="padding: 8px;">Pod count</td>
+                <td style="padding: 8px;">{{ metrics.pod_count }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Total CPU usage</td>
+                <td style="padding: 8px;">{{ metrics.total_cpu_usage }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Total RAM usage</td>
+                <td style="padding: 8px;">{{ metrics.total_memory_usage }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">CPU request</td>
+                <td style="padding: 8px;">{{ metrics.total_cpu_request }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">RAM request</td>
+                <td style="padding: 8px;">{{ metrics.total_memory_request }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Pod uptime</td>
+                <td style="padding: 8px;">{{ metrics.total_pod_uptime_seconds }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Coldstart time</td>
+                <td style="padding: 8px;">{{ metrics.max_cold_start_time_seconds }}</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 
     <div>

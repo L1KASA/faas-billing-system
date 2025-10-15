@@ -1,3 +1,5 @@
+from collections import Counter
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -98,7 +100,18 @@ def function_detail(request, pk):
     knative_manager = KnativeManager()
     status_result = knative_manager.get_function_status(function.name)
 
-    metrics = knative_manager.get_function_metrics(function.name)
+    metrics = knative_manager.get_function_metrics(function.name)['data']['summary']
+
+    if len(function.metrics.keys()) == 0:
+        function.metrics = metrics
+    else:
+        new_metrics = function.metrics.copy()
+        for key in ['total_cpu_usage', 'total_memory_usage']:
+            if key in function.metrics and key in metrics:
+                new_metrics[key] = function.metrics[key] + metrics[key]
+        new_metrics['total_pod_uptime_seconds'] = metrics['total_pod_uptime_seconds']
+        function.metrics = new_metrics
+    function.save()
 
     knative_data = {}
     if status_result['success']:
@@ -107,7 +120,7 @@ def function_detail(request, pk):
     return render(request, 'functions/function_detail.html', {
         'function': function,
         'knative_data': knative_data,
-        'metrics': metrics,
+        'metrics': function.metrics,
     })
 
 
