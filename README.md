@@ -72,6 +72,10 @@ kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1
 kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-core.yaml
 kubectl apply -f https://github.com/knative/net-kourier/releases/download/knative-v1.17.0/kourier.yaml
 
+# Установка Metrics API
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+
 # Настройка сети
 kubectl patch configmap/config-network \
   --namespace knative-serving \
