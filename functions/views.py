@@ -7,6 +7,8 @@ from django.views.generic import ListView, DetailView
 from .models import Function
 from .knative_manager import KnativeManager
 
+import json
+
 
 @login_required
 def function_list(request):
@@ -18,6 +20,7 @@ def function_list(request):
     for function in functions:
         if function.status in [Function.FunctionStatus.READY, Function.FunctionStatus.DEPLOYING]:
             status_result = knative_manager.get_function_status(function.name)
+            print(status_result)
             if status_result['success']:
                 knative_data = status_result['data']
                 # Можно обновить статус на основе данных из Knative
@@ -95,13 +98,16 @@ def function_detail(request, pk):
     knative_manager = KnativeManager()
     status_result = knative_manager.get_function_status(function.name)
 
+    metrics = knative_manager.get_function_metrics(function.name)
+
     knative_data = {}
     if status_result['success']:
         knative_data = status_result['data']
 
     return render(request, 'functions/function_detail.html', {
         'function': function,
-        'knative_data': knative_data
+        'knative_data': knative_data,
+        'metrics': metrics,
     })
 
 
