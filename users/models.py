@@ -7,6 +7,7 @@ from .managers import UserManager, ClientUserManager, EmployeeUserManager
 class User(AbstractUser):
     """Default user model"""
     class UserCurrency(models.TextChoices):
+
         USD = 'USD', 'US Dollar'
         EUR = 'EUR', 'Euro'
         RUB = 'RUB', 'Russian Ruble'
@@ -66,6 +67,7 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
 
     objects = UserManager()
 
