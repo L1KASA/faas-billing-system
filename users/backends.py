@@ -1,7 +1,7 @@
 from typing import Optional, Any
 
 from django.contrib.auth.backends import ModelBackend
-from django.core.exceptions import ObjectDoesNotExist  # ← ДОБАВИТЬ ЭТОТ ИМПОРТ
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
 
 from .models import User
