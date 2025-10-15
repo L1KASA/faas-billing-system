@@ -40,7 +40,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 ### 6. Открыть в браузере
-* Главная страница: http://127.0.0.1:8000/
+* Главная страница: http://127.0.0.1:8000/users/
 * Админка: http://127.0.0.1:8000/admin/
 
 ## Структура проекта

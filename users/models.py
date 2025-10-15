@@ -1,23 +1,21 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+from .managers import UserManager, ClientUserManager, EmployeeUserManager
 
 
 class User(AbstractUser):
     """Default user model"""
     class UserCurrency(models.TextChoices):
-        USD = 'USD',
-        EUR = 'EUR',
-        RUB = 'RUB',
-        BYN = 'BYN',
-        KZT = 'KZT',
-        UAH = 'UAH',
-        CNY = 'CNY',
-        JPY = 'JPY',
 
-    class UserType(models.TextChoices):
-        CLIENT = 'CLIENT', 'Client',
-        EMPLOYEE = 'EMPLOYEE', 'Employee',
-        ADMIN = 'ADMIN', 'Admin',
+        USD = 'USD', 'US Dollar'
+        EUR = 'EUR', 'Euro'
+        RUB = 'RUB', 'Russian Ruble'
+        BYN = 'BYN', 'Belarusian Ruble'
+        KZT = 'KZT', 'Kazakhstani Tenge'
+        UAH = 'UAH', 'Ukrainian Hryvnia'
+        CNY = 'CNY', 'Chinese Yuan'
+        JPY = 'JPY', 'Japanese Yen'
 
     username = None
     email = models.EmailField(
@@ -70,6 +68,9 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+
+    objects = UserManager()
+
     class Meta:
         db_table = 'users'
         indexes = [
@@ -77,12 +78,24 @@ class User(AbstractUser):
             models.Index(fields=['phone']),
             models.Index(fields=['created_at']),
         ]
+        ordering = ['-created_at']
 
     @property
     def full_name(self):
         """Full name of user"""
         names = [str(self.first_name), str(self.second_name), str(self.last_name)]
         return " ".join(filter(None, names)).strip()
+
+    @property
+    def user_type(self):
+        """Return user type based on related profiles"""
+        if hasattr(self, 'client'):
+            return 'CLIENT'
+        elif hasattr(self, 'employee'):
+            return 'EMPLOYEE'
+        elif self.is_superuser:
+            return 'ADMIN'
+        return 'UNKNOWN'
 
     @property
     def is_client(self):
@@ -115,6 +128,8 @@ class ClientUser(models.Model):
         verbose_name='Email notifications',
     )
 
+    objects = ClientUserManager()
+
     class Meta:
         db_table = 'user_clients'
 
@@ -122,8 +137,8 @@ class ClientUser(models.Model):
 class EmployeeUser(models.Model):
     """Model for staff user"""
     class StaffRoles(models.TextChoices):
-        MANAGER = 'MANAGER', 'Manager',
-        SUPPORT = 'SUPPORT', 'Support',
+        MANAGER = 'MANAGER', 'Manager'
+        SUPPORT = 'SUPPORT', 'Support'
 
     user = models.OneToOneField(
         User,
@@ -142,6 +157,8 @@ class EmployeeUser(models.Model):
         default=StaffRoles.SUPPORT,
         verbose_name='Employee Role',
     )
+
+    objects = EmployeeUserManager()
 
     class Meta:
         db_table = 'user_employees'

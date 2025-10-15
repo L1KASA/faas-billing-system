@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <h2>Welcome to Dashboard</h2>
+    <p>Hello, {{ user.first_name }}!</p>
+    <p><a href="{% url 'users:profile' %}">Profile</a> | <a href="{% url 'users:logout' %}">Logout</a></p>
+</body>
+</html>

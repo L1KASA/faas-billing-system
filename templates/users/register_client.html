@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register as Client</title>
+</head>
+<body>
+    <h2>Register as Client</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Register as Client</button>
+    </form>
+
+    <p><a href="{% url 'users:login' %}">Already have account? Login</a></p>
+    <p><a href="{% url 'users:password-reset' %}">Forgot password?</a></p>
+</body>
+</html>
