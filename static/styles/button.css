@@ -1,0 +1,22 @@
+.button {
+    all: unset;
+    padding:10px;
+    background: #FEF2DF;
+    border-radius: 7px;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #232c50;
+    margin: 0 auto;
+}
+
+.button:hover {
+    background: #fdb7e1;
+    box-shadow: rgba(162,115,182,0.88);
+    transition: 0.1s;
+    color: white;
+    cursor: pointer;
+}
+
+a:hover {
+    text-decoration: none;
+}

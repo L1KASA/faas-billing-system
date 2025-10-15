@@ -1,11 +1,16 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/dashboard.css' %}">
 </head>
 <body>
-    <h2>Welcome to Dashboard</h2>
-    <p>Hello, {{ user.first_name }}!</p>
-    <p><a href="{% url 'users:profile' %}">Profile</a> | <a href="{% url 'users:logout' %}">Logout</a></p>
+    <h2 class="hello-title">Welcome to Dashboard</h2>
+    <div class="form-wrapper">
+        <p class="hello-text">Hello, {{ user.first_name }}!</p>
+        <p><a href="{% url 'users:profile' %}">Profile</a> | <a href="{% url 'users:logout' %}">Logout</a></p>
+    </div>
 </body>
 </html>

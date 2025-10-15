@@ -1,11 +1,18 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Success</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/password.css' %}">
 </head>
 <body>
-    <h2>Registration Successful!</h2>
-    <p>Check your email to verify account: <strong>{{ email }}</strong></p>
-    <p><a href="{% url 'users:login' %}">Login</a></p>
+    <div class="wrapper">
+        <div class="form-wrapper">
+            <h2>Registration Successful!</h2>
+            <p>Check your email to verify account: <strong>{{ email }}</strong></p>
+            <p><a href="{% url 'users:login' %}">Login</a></p>
+        </div>
+    </div>
 </body>
 </html>

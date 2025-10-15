@@ -1,6 +1,10 @@
 from django.urls import path
 from . import views
 
+from django.conf.urls.static import static
+from django.urls import path, include
+from faas_billing import settings
+
 app_name = 'users'
 
 urlpatterns = [
@@ -22,4 +26,4 @@ urlpatterns = [
     path('password-reset/', views.PasswordResetView.as_view(), name='password-reset'),
     path('password-reset/confirm/', views.PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
     path('password-reset/complete/', views.PasswordResetCompleteView.as_view(), name='password-reset-complete'),
-]
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
