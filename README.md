@@ -40,11 +40,15 @@ python manage.py migrate
 ```
 python manage.py createsuperuser
 ```
-### 6. Запустить сервер 
+### 6. Прописать команду для создания уже готового тарифного плана
+```
+python manage.py create_default_plans
+```
+### 7. Запустить сервер 
 ```
 python manage.py runserver
 ```
-### 7. Открыть в браузере
+### 8. Открыть в браузере
 * Главная страница: http://127.0.0.1:8000/users/
 * Админка: http://127.0.0.1:8000/admin/
 
@@ -88,8 +92,8 @@ kubectl patch configmap/config-domain \
   --type merge \
   --patch '{"data":{"knative.demo.com":""}}'
 ```
-### Настроить и поднять проект Django (выше прямиком до запуска сервера)
-### Проверить что Knative и тестовый сервис работают
+### Настроить и поднять проект Django (перейти к пунктам выше, выполнить все до запуска сервера)
+### Проверить, что Knative и тестовый сервис работают
 ```
 kubectl get pods -n knative-serving
 
@@ -100,7 +104,7 @@ curl -H "Host: echo.default.knative.demo.com" "http://localhost:80"
 #### Нажать "Deploy New Function"
 ```
 Name: echo-server
-Docker Image: ealen/echo-server:latest  
+Docker Image: ealen/echo-server:latest
 Min Scale: 0
 Max Scale: 3
 

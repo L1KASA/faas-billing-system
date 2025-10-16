@@ -1,13 +1,11 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.exceptions import ObjectDoesNotExist
 from .managers import UserManager, ClientUserManager, EmployeeUserManager
 
 
 class User(AbstractUser):
     """Default user model"""
     class UserCurrency(models.TextChoices):
-
         USD = 'USD', 'US Dollar'
         EUR = 'EUR', 'Euro'
         RUB = 'RUB', 'Russian Ruble'
@@ -67,7 +65,6 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-
 
     objects = UserManager()
 
@@ -162,11 +159,3 @@ class EmployeeUser(models.Model):
 
     class Meta:
         db_table = 'user_employees'
-
-    @property
-    def is_manager(self):
-        return self.role == self.StaffRoles.MANAGER
-
-    @property
-    def is_support(self):
-        return self.role == self.StaffRoles.SUPPORT
