@@ -82,22 +82,7 @@
                 <br>
                 - Per month: ${{ cost_data.costs.month|floatformat:4 }}
                 <br>
-                {% if cost_data.detailed_costs.month %}
-                <strong>Monthly details:</strong>
-                <br>
-                - CPU: ${{ cost_data.detailed_costs.month.cpu_cost|floatformat:4 }}
-                <br>
-                - Memory: ${{ cost_data.detailed_costs.month.memory_cost|floatformat:4 }}
-                <br>
-                - Cold Starts: ${{ cost_data.detailed_costs.month.cold_start_cost|floatformat:4 }}
-                <br>
-                - Platform Fee: ${{ cost_data.detailed_costs.month.platform_fee|floatformat:4 }}
-                {% endif %}
-                <br>
-                Updated: {{ cost_data.updated_at }}
-                <br>
-                Created: {{ cost_data.function.created_at|date:"M d, Y" }}
-                <hr>
+
             </div>
         {% endfor %}
     {% else %}
