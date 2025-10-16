@@ -9,30 +9,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # =============================================================================
     # ЦЕНЫ РЕСУРСОВ
-    # =============================================================================
     CPU_RATE = Decimal(os.getenv('CPU_RATE', '0.002'))
     MEMORY_RATE = Decimal(os.getenv('MEMORY_RATE', '0.001'))
     COLD_START_RATE = Decimal(os.getenv('COLD_START_RATE', '0.005'))
     PLATFORM_FEE = Decimal(os.getenv('PLATFORM_FEE', '1.3'))
 
-    # =============================================================================
     # КОЭФФИЦИЕНТЫ ЭФФЕКТИВНОСТИ
-    # =============================================================================
     EFFICIENCY_MIN = Decimal(os.getenv('EFFICIENCY_MIN', '0.7'))
     EFFICIENCY_MAX = Decimal(os.getenv('EFFICIENCY_MAX', '1.3'))
 
-    # =============================================================================
     # КОЭФФИЦИЕНТЫ ЗАГРУЗКИ
-    # =============================================================================
     CLUSTER_LOAD_MIN = Decimal(os.getenv('CLUSTER_LOAD_MIN', '0.8'))
     CLUSTER_LOAD_MAX = Decimal(os.getenv('CLUSTER_LOAD_MAX', '1.5'))
     CLUSTER_LOAD_BASE = Decimal(os.getenv('CLUSTER_LOAD_BASE', '50'))
 
-    # =============================================================================
     # ЛИМИТЫ ТАРИФОВ
-    # =============================================================================
     PLAN_LIMITS_STARTER_MAX_FUNCTIONS = 5
     PLAN_LIMITS_STARTER_MAX_CPU = 1000
     PLAN_LIMITS_STARTER_MAX_MEMORY = 1073741824
@@ -48,30 +40,22 @@ class Config:
     PLAN_LIMITS_ENTERPRISE_MAX_MEMORY = 4294967296
     PLAN_LIMITS_ENTERPRISE_MAX_SCALE = 20
 
-    # =============================================================================
     # РАСЧЕТНЫЕ КОНСТАНТЫ
-    # =============================================================================
     HOURS_IN_MONTH = Decimal('730')
     MILLICORES_PER_CORE = Decimal('1000')
     BYTES_PER_GB = Decimal('1073741824')
     SECONDS_PER_HOUR = Decimal('3600')
 
-    # =============================================================================
     # ПЕРИОДЫ РАСЧЕТА
-    # =============================================================================
     PERIOD_MINUTE = Decimal('0.01667')
     PERIOD_HOUR = Decimal('1')
     PERIOD_DAY = Decimal('24')
     PERIOD_MONTH = Decimal('720')
 
-    # =============================================================================
     # КЭШ
-    # =============================================================================
     CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', '120'))
 
-    # =============================================================================
     # НАСТРОЙКИ ЭЛЕКТРОННОЙ ПОЧТЫ
-    # =============================================================================
     EMAIL_VERIFICATION_TIMEOUT = int(os.getenv('EMAIL_VERIFICATION_TIMEOUT', '900'))
     PASSWORD_RECOVERY_CODE_LENGTH = int(os.getenv('PASSWORD_RECOVERY_CODE_LENGTH', '6'))
     PASSWORD_RECOVERY_TIMEOUT = int(os.getenv('PASSWORD_RECOVERY_TIMEOUT', '900'))
@@ -81,14 +65,7 @@ class Config:
     EMAIL_SUBJECT_WELCOME = os.getenv('EMAIL_SUBJECT_WELCOME', 'Welcome to Our Service!')
     EMAIL_SUBJECT_RECOVERY = os.getenv('EMAIL_SUBJECT_RECOVERY', 'Password Recovery Code')
 
-    # Шаблоны писем
-    EMAIL_TEMPLATE_VERIFICATION = os.getenv('EMAIL_TEMPLATE_VERIFICATION', 'users/email/verification_email.html')
-    EMAIL_TEMPLATE_WELCOME = os.getenv('EMAIL_TEMPLATE_WELCOME', 'users/email/welcome_email.html')
-    EMAIL_TEMPLATE_RECOVERY = os.getenv('EMAIL_TEMPLATE_RECOVERY', 'users/email/recovery_code.html')
-
-    # =============================================================================
     # НАСТРОЙКИ МЕТРИК И КЭШИРОВАНИЯ
-    # =============================================================================
     METRICS_CACHE_TIMEOUT = int(os.getenv('METRICS_CACHE_TIMEOUT', '120'))
     COST_CALCULATION_CACHE_TIMEOUT = int(os.getenv('COST_CALCULATION_CACHE_TIMEOUT', '120'))
 
@@ -102,9 +79,7 @@ class Config:
     CACHE_KEY_FUNCTION_COST = "function_cost_{function_id}_{user_id}"
     CACHE_KEY_METRICS = "metrics_{function_id}"
 
-    # =============================================================================
     # НАСТРОЙКИ KUBERNETES И KNATIVE
-    # =============================================================================
     KUBERNETES_NAMESPACE = os.getenv('KUBERNETES_NAMESPACE', 'default')
 
     # Knative API configuration
@@ -148,9 +123,48 @@ class Config:
         'default': 1
     }
 
-    # =============================================================================
-    # МЕТОДЫ ДЛЯ РАБОТЫ С КОНФИГОМ
-    # =============================================================================
+    # Интервалы обновления UI (миллисекунды)
+    DASHBOARD_UPDATE_INTERVAL = int(os.getenv('DASHBOARD_UPDATE_INTERVAL', '60000'))
+
+    # Периоды расчета для UI (часы)
+    UI_PERIODS = {
+        'hour': Decimal('1'),
+        'day': Decimal('24'),
+        'week': Decimal('168'),
+        'month': Decimal('720')
+    }
+
+    # Дефолтные значения для оценки стоимости
+    ESTIMATION_DEFAULT_CPU = int(os.getenv('ESTIMATION_DEFAULT_CPU', '500'))
+    ESTIMATION_DEFAULT_MEMORY = int(os.getenv('ESTIMATION_DEFAULT_MEMORY', '536870912'))
+    ESTIMATION_DEFAULT_COLD_STARTS = int(os.getenv('ESTIMATION_DEFAULT_COLD_STARTS', '10'))
+    ESTIMATION_DEFAULT_EFFICIENCY = Decimal(os.getenv('ESTIMATION_DEFAULT_EFFICIENCY', '80'))
+
+    # Коэффициенты конвертации
+    NANOCORES_TO_MILLICORES = Decimal('1000000')
+
+    # Фолбэк значения при недоступности метрик
+    FALLBACK_CPU_PER_POD = int(os.getenv('FALLBACK_CPU_PER_POD', '1000'))
+    FALLBACK_MEMORY_PER_POD = int(os.getenv('FALLBACK_MEMORY_PER_POD', '536870912'))
+    FALLBACK_EFFICIENCY = Decimal(os.getenv('FALLBACK_EFFICIENCY', '80'))
+
+
+    @classmethod
+    def get_ui_periods(cls) -> dict:
+        """Получить периоды для UI"""
+        return cls.UI_PERIODS
+
+    @classmethod
+    def get_fallback_metrics(cls, function) -> dict:
+        """Получить фолбэк метрики при недоступности Knative"""
+        return {
+            'total_cpu_request': getattr(function, 'min_scale', 1) * cls.FALLBACK_CPU_PER_POD,
+            'total_memory_request': getattr(function, 'memory_request', cls.FALLBACK_MEMORY_PER_POD),
+            'cold_start_count': function.metrics.get('cold_start_count', 0) if function.metrics else 0,
+            'overall_efficiency': float(cls.FALLBACK_EFFICIENCY),
+            'pod_count': 0,
+            'total_pod_uptime_seconds': 0,
+        }
 
     @classmethod
     def get_periods(cls) -> dict:

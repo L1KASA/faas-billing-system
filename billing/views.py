@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from decimal import Decimal
 import json
-
+from faas_billing.config import config
 from .billing_calculator import BillingCalculator
 from .metrics_manager import SimpleMetricsManager
 from .models import BillingPeriod
@@ -42,7 +42,7 @@ def realtime_dashboard(request):
 
     return render(request, 'billing/realtime_dashboard.html', {
         'realtime_data': realtime_data,
-        'update_interval': 60000,  # 60 секунд
+        'update_interval': config.DASHBOARD_UPDATE_INTERVAL,
     })
 
 
@@ -156,10 +156,10 @@ def cost_estimation(request):
         data = json.loads(request.body)
 
         # Параметры функции для оценки
-        cpu_request = data.get('cpu_request', 500)  # millicores
-        memory_request = data.get('memory_request', 536870912)  # bytes
-        expected_cold_starts = data.get('expected_cold_starts', 10)
-        expected_efficiency = data.get('expected_efficiency', 80)  # %
+        cpu_request = data.get('cpu_request', config.ESTIMATION_DEFAULT_CPU)  # millicores
+        memory_request = data.get('memory_request', config.FALLBACK_MEMORY_PER_POD)  # bytes
+        expected_cold_starts = data.get('expected_cold_starts', config.ESTIMATION_DEFAULT_COLD_STARTS)
+        expected_efficiency = data.get('expected_efficiency', config.ESTIMATION_DEFAULT_EFFICIENCY)  # %
 
         calculator = BillingCalculator(user=request.user)
 
@@ -219,12 +219,7 @@ def function_cost_detail(request, function_id):
         calculator = BillingCalculator(user=request.user)
 
         # Расчет за разные периоды
-        periods = {
-            'hour': Decimal('1'),
-            'day': Decimal('24'),
-            'week': Decimal('168'),
-            'month': Decimal('720')
-        }
+        periods = config.get_ui_periods()
 
         function_metrics = get_function_metrics_from_knative(function)
         cost_breakdowns = {}
@@ -312,9 +307,9 @@ def get_function_metrics_from_knative(function):
     if metrics_result['success']:
         knative_metrics = metrics_result['data']['summary']
 
-        # Конвертируем nanocores в millicores для биллинга
-        cpu_request_millicores = knative_metrics.get('total_cpu_request', 0) // 1000000
-        cpu_usage_millicores = knative_metrics.get('total_cpu_usage', 0) // 1000000
+        # Конвертируем nanocores в millicores для биллинга из конфига
+        cpu_request_millicores = knative_metrics.get('total_cpu_request', 0) // config.NANOCORES_TO_MILLICORES
+        cpu_usage_millicores = knative_metrics.get('total_cpu_usage', 0) // config.NANOCORES_TO_MILLICORES
 
         # Рассчитываем эффективность
         cpu_efficiency = 0
@@ -338,12 +333,5 @@ def get_function_metrics_from_knative(function):
             'total_pod_uptime_seconds': knative_metrics.get('total_pod_uptime_seconds', 0),
         }
 
-    # Возвращаем базовые метрики если не удалось получить из Knative
-    return {
-        'total_cpu_request': getattr(function, 'min_scale', 1) * 1000,
-        'total_memory_request': getattr(function, 'memory_request', 536870912),
-        'cold_start_count': function.metrics.get('cold_start_count', 0) if function.metrics else 0,
-        'overall_efficiency': 80,
-        'pod_count': 0,
-        'total_pod_uptime_seconds': 0,
-    }
+    # Возвращаем базовые метрики из конфига если не удалось получить из Knative
+    return config.get_fallback_metrics(function)

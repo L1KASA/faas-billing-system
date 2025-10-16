@@ -81,7 +81,7 @@ class EmailService:
                 'site_name': getattr(settings, 'SITE_NAME', 'Your Site')
             }
 
-            html_message = render_to_string(config.EMAIL_TEMPLATE_VERIFICATION, context)
+            html_message = render_to_string('users/email/verification_email.html', context)
             plain_message = strip_tags(html_message)
 
             send_mail(
@@ -109,7 +109,7 @@ class EmailService:
                 'site_name': getattr(settings, 'SITE_NAME', 'Your Site')
             }
 
-            html_message = render_to_string(config.EMAIL_TEMPLATE_WELCOME, context)
+            html_message = render_to_string('users/email/welcome_email.html', context)
             plain_message = strip_tags(html_message)
 
             send_mail(
@@ -137,7 +137,7 @@ class EmailService:
                 'site_name': getattr(settings, 'SITE_NAME', 'Your Site')
             }
 
-            html_message = render_to_string(config.EMAIL_TEMPLATE_RECOVERY, context)
+            html_message = render_to_string('users/email/recovery_code.html', context)
             plain_message = strip_tags(html_message)
 
             send_mail(
