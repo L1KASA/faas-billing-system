@@ -1,0 +1,101 @@
+* {
+    box-sizing: border-box;
+    color: white;
+}
+
+body {
+    margin: 0 auto;
+    width: 1440px;
+    height: 779px;
+    padding: 0;
+    background-image: url("../images/bg.jpg");
+    //background-color: rgba(0, 0, 0, 0.5);
+    background-size: cover;
+    background-blend-mode: multiply;
+    font-family: sans-serif;
+    background-repeat: no-repeat;
+}
+
+h2 {
+    color: white;
+    text-transform: uppercase;
+    margin-top: 2rem;
+
+}
+
+label[for^="id_"] {
+    display: block;
+    margin-bottom: 5px;
+    color: #fff;
+    font-size: 1.1em;
+    text-transform: uppercase;
+    font-family: sans-serif;
+}
+
+.form-control {
+    margin: 0 auto;
+    padding: 10px;
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.75);
+    border: none;
+    border-radius: 20rem;
+    width: 30rem;
+    min-width: 50px;
+    color: #111111;
+}
+
+::placeholder {
+    color: #1b1b1b;
+}
+
+.form-wrapper {
+    width: 40rem;
+    background-color: rgba(32, 45, 82, 0.73);
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 20px;
+}
+
+.wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.send-button {
+    margin: 1rem auto;
+    all: unset;
+    padding:10px 30px;
+    background: #FEF2DF;
+    border-radius: 15px;
+    font-family: sans-serif;
+    font-size: 20px;
+    color: #232c50;
+}
+
+.send-button:hover {
+    background: #fdb7e1;
+    box-shadow: rgba(162,115,182,0.88);
+    transition: 0.1s;
+    color: white;
+    cursor: pointer;
+}
+
+.alternative-link {
+    color: white;
+}
+
+a {
+    color: white;
+    margin: 1rem;
+}
+
+a:hover {
+    text-decoration: none;
+}
+

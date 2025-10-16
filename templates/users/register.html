@@ -1,16 +1,22 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Register</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/index.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
 </head>
 <body>
-    <h2>Register</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-    </form>
-
-    <p><a href="{% url 'users:login' %}">Already have account? Login</a></p>
+    <div class="wrapper">
+        <div class="form-wrapper">
+            <h2>Register</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="send-button">Register</button>
+            </form>
+                <a href="{% url 'users:login' %}">Already have account? Login</a>
+        </div>
+    </div>
 </body>
 </html>

@@ -1,17 +1,24 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Register as Client</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/password.css' %}">
 </head>
 <body>
-    <h2>Register as Client</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register as Client</button>
-    </form>
+   <div class="wrapper">
+       <div class="form-wrapper">
+           <h2>Register as Client</h2>
+           <form method="post">
+               {% csrf_token %}
+               {{ form.as_p }}
+               <button class="send-button" type="submit">Register as Client</button>
+           </form>
 
-    <p><a href="{% url 'users:login' %}">Already have account? Login</a></p>
-    <p><a href="{% url 'users:password-reset' %}">Forgot password?</a></p>
+           <p><a href="{% url 'users:login' %}">Already have account? Login</a></p>
+           <p><a href="{% url 'users:password-reset' %}">Forgot password?</a></p>
+       </div>
+   </div>
 </body>
 </html>
