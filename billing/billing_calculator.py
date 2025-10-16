@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from billing.models import BillingConfig
 from tarif_plan.models import TariffPlan, UserSubscription
 from users.models import User
+from faas_billing.config import config
 
 
 class MetricsCalculator:
@@ -156,28 +157,28 @@ class BillingCalculator:
         if not self.tariff_plan:
             self.tariff_plan = self._get_user_tariff_plan()
 
-        # Если тарифный план все еще None, используем значения по умолчанию
+        # Если тарифный план все еще None, используем значения из конфига
         if not self.tariff_plan:
-            cpu_rate = Decimal('0.002')
-            memory_rate = Decimal('0.001')
-            cold_start_penalty = Decimal('0.005')
-            platform_fee_rate = Decimal('1.3')
-            min_efficiency = Decimal('0.7')
-            max_efficiency = Decimal('1.3')
+            cpu_rate = config.CPU_RATE
+            memory_rate = config.MEMORY_RATE
+            cold_start_penalty = config.COLD_START_RATE
+            platform_fee_rate = config.PLATFORM_FEE
+            min_efficiency = config.EFFICIENCY_MIN
+            max_efficiency = config.EFFICIENCY_MAX
         else:
             # Используем тарифы из плана пользователя
-            cpu_rate = getattr(self.tariff_plan, 'cpu_rate_per_hour', Decimal('0.002'))
-            memory_rate = getattr(self.tariff_plan, 'memory_rate_per_gb_hour', Decimal('0.001'))
-            cold_start_penalty = getattr(self.tariff_plan, 'cold_start_penalty', Decimal('0.005'))
-            platform_fee_rate = getattr(self.tariff_plan, 'platform_fee_rate', Decimal('1.3'))
-            min_efficiency = getattr(self.tariff_plan, 'min_efficiency_factor', Decimal('0.7'))
-            max_efficiency = getattr(self.tariff_plan, 'max_efficiency_factor', Decimal('1.3'))
+            cpu_rate = getattr(self.tariff_plan, 'cpu_rate_per_hour', config.CPU_RATE)
+            memory_rate = getattr(self.tariff_plan, 'memory_rate_per_gb_hour', config.MEMORY_RATE)
+            cold_start_penalty = getattr(self.tariff_plan, 'cold_start_penalty', config.COLD_START_RATE)
+            platform_fee_rate = getattr(self.tariff_plan, 'platform_fee_rate', config.PLATFORM_FEE)
+            min_efficiency = getattr(self.tariff_plan, 'min_efficiency_factor', config.EFFICIENCY_MIN)
+            max_efficiency = getattr(self.tariff_plan, 'max_efficiency_factor', config.EFFICIENCY_MAX)
 
         # 1. БАЗОВАЯ СТОИМОСТЬ РЕСУРСОВ
-        cpu_hours = Decimal(str(function_metrics.get('total_cpu_request', 0))) / Decimal('1000') * period_hours
+        cpu_hours = Decimal(str(function_metrics.get('total_cpu_request', 0))) / config.MILLICORES_PER_CORE * period_hours
         memory_gb_hours = (
             Decimal(str(function_metrics.get('total_memory_request', 0))) /
-            Decimal(str(1024 ** 3)) * period_hours
+            config.BYTES_PER_GB * period_hours
         )
 
         cpu_cost = cpu_hours * cpu_rate
@@ -225,7 +226,7 @@ class BillingCalculator:
         self,
         cold_start_count: int,
         cluster_metrics: Optional[Dict] = None,
-        cold_start_penalty: Decimal = Decimal('0.005')
+        cold_start_penalty: Decimal = config.COLD_START_RATE
     ) -> Decimal:
         """
         Расчет стоимости холодных стартов функции
@@ -247,13 +248,13 @@ class BillingCalculator:
         # Если есть метрики кластера, можно учесть дополнительные факторы
         if cluster_metrics:
             # Пример: учет загрузки кластера при холодных стартах
-            cluster_load = Decimal(str(cluster_metrics.get('average_load_percent', 50)))
+            cluster_load = Decimal(str(cluster_metrics.get('average_load_percent', config.CLUSTER_LOAD_BASE)))
 
             # Коэффициент влияния загрузки кластера (чем выше загрузка, тем дороже холодные старты)
-            load_factor = Decimal('1.0') + (cluster_load - Decimal('50')) / Decimal('200')
+            load_factor = Decimal('1.0') + (cluster_load - config.CLUSTER_LOAD_BASE) / Decimal('200')
 
-            # Ограничиваем коэффициент разумными пределами
-            load_factor = max(Decimal('0.8'), min(Decimal('1.5'), load_factor))
+            # Ограничиваем коэффициент разумными пределами из конфига
+            load_factor = max(config.CLUSTER_LOAD_MIN, min(config.CLUSTER_LOAD_MAX, load_factor))
 
             base_cost = base_cost * load_factor
 
@@ -262,8 +263,8 @@ class BillingCalculator:
     def calculate_efficiency_factor(
         self,
         efficiency: Decimal,
-        min_efficiency: Decimal,
-        max_efficiency: Decimal
+        min_efficiency: Decimal = config.EFFICIENCY_MIN,
+        max_efficiency: Decimal = config.EFFICIENCY_MAX
     ) -> Decimal:
         """
         Расчет коэффициента эффективности с ограничениями из тарифа
@@ -292,10 +293,13 @@ class BillingCalculator:
             return Decimal('0')
 
         # Пересчитываем месячную цену в стоимость за период
-        hours_in_month = Decimal('730')  # ~30.42 дней
-        fixed_cost = (monthly_price / hours_in_month) * period_hours
+        fixed_cost = (monthly_price / config.HOURS_IN_MONTH) * period_hours
 
         return fixed_cost.quantize(Decimal('0.0001'))
+
+    def _get_plan_limits_by_tier(self, tier: str) -> Dict:
+        """Получение лимитов по уровню тарифного плана"""
+        return config.get_plan_limits(tier)
 
     def check_plan_limits(self, function_data: Dict) -> Dict[str, bool]:
         """
@@ -304,21 +308,17 @@ class BillingCalculator:
         if not self.tariff_plan:
             self.tariff_plan = self._get_user_tariff_plan()
 
-        # Если тарифного плана нет, используем значения по умолчанию
+        # Если тарифного плана нет, используем значения из конфига для STARTER
         if not self.tariff_plan:
             plan_limits = {
-                'max_functions': 10,
-                'max_cpu_per_function': 2000,
-                'max_memory_per_function': 2147483648,
-                'max_scale': 10,
+                'max_functions': config.PLAN_LIMITS_STARTER_MAX_FUNCTIONS,
+                'max_cpu_per_function': config.PLAN_LIMITS_STARTER_MAX_CPU,
+                'max_memory_per_function': config.PLAN_LIMITS_STARTER_MAX_MEMORY,
+                'max_scale': config.PLAN_LIMITS_STARTER_MAX_SCALE,
             }
         else:
-            plan_limits = {
-                'max_functions': getattr(self.tariff_plan, 'max_functions', 10),
-                'max_cpu_per_function': getattr(self.tariff_plan, 'max_cpu_per_function', 2000),
-                'max_memory_per_function': getattr(self.tariff_plan, 'max_memory_per_function', 2147483648),
-                'max_scale': getattr(self.tariff_plan, 'max_scale', 10),
-            }
+            # Получаем лимиты по уровню тарифа
+            plan_limits = self._get_plan_limits_by_tier(self.tariff_plan.tier)
 
         current_usage = self._get_current_usage()
 

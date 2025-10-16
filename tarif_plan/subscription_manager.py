@@ -36,7 +36,6 @@ class SubscriptionManager:
     @staticmethod
     def create_subscription(user: User, tariff_plan: TariffPlan) -> UserSubscription:
         """Создание новой подписки"""
-        # Используем транзакцию для атомарности
         with transaction.atomic():
             # Получаем или создаем подписку
             subscription, created = UserSubscription.objects.get_or_create(

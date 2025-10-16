@@ -79,7 +79,7 @@ def deploy_function(request):
 
         if result['success']:
             function.status = Function.FunctionStatus.READY
-            function.url = f"http://{name}.default.knative.demo.com"  # Ваш домен из Knative
+            function.url = f"http://{name}.default.knative.demo.com"  # Домен из Knative
             function.save()
             messages.success(request, f'Function "{name}" deployed successfully!')
         else:
