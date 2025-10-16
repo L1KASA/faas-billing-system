@@ -250,7 +250,7 @@ class BillingCalculator:
             cluster_load = Decimal(str(cluster_metrics.get('average_load_percent', 50)))
 
             # Коэффициент влияния загрузки кластера (чем выше загрузка, тем дороже холодные старты)
-            load_factor = Decimal('1.0') + (cluster_load - Decimal('50')) / Decimal('100')
+            load_factor = Decimal('1.0') + (cluster_load - Decimal('50')) / Decimal('200')
 
             # Ограничиваем коэффициент разумными пределами
             load_factor = max(Decimal('0.8'), min(Decimal('1.5'), load_factor))
