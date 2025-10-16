@@ -193,6 +193,18 @@ faas-billing-system/
 │   ├── services.py
 │   ├── views.py
 │   └── urls.py
+├── billing/
+│   ├── management/commands/create_default_plans.py
+│   ├── seed_tariff_plans.py
+│   ├── subscription_manager.py
+│   ├── views.py
+│   └── urls.py
+├── tarif_plan/
+│   ├── models.py
+│   ├── billing_calculator.py
+│   ├── metrics_manager.py
+│   ├── views.py
+│   └── urls.py
 ├── templates/
 └── k8s/
     ├── postgres.yaml
