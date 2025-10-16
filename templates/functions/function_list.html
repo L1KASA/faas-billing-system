@@ -1,38 +1,37 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>My Functions</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/dashboard.css' %}">
 </head>
 <body>
     <h1>My Functions</h1>
-    
-    <a href="{% url 'functions:deploy_function' %}">Deploy New Function</a>
-    
+    <a href="{% url 'functions:deploy_function' %}" class="send-button">Deploy New Function</a>
+
     {% if messages %}
         {% for message in messages %}
             <div>{{ message }}</div>
         {% endfor %}
     {% endif %}
-    
+
     {% if functions %}
-        <ul>
-        {% for function in functions %}
-            <li>
-                <strong>{{ function.name }}</strong><br>
-                Status: {{ function.status }}<br>
-                Image: {{ function.docker_image }}<br>
-                Scale: {{ function.min_scale }} - {{ function.max_scale }}<br>
-                {% if function.url %}
-                    URL: <a href="{{ function.url }}" target="_blank">{{ function.url }}</a><br>
-                {% endif %}
-                <a href="{% url 'functions:function_detail' function.id %}">Details</a>
-                {% if function.url %}
-                    | <a href="{{ function.url }}" target="_blank">Invoke</a>
-                {% endif %}
-                | <a href="{% url 'functions:delete_function' function.id %}">Delete</a>
-            </li>
-        {% endfor %}
-        </ul>
+            {% for function in functions %}
+                <div class="form-wrapper">
+                    <strong style="padding: 15px;">{{ function.name }}</strong><br>
+                    Status: {{ function.status }}<br>
+                    Image: {{ function.docker_image }}<br>
+                    Scale: {{ function.min_scale }} - {{ function.max_scale }}<br>
+                    <p>
+                        <a href="{% url 'functions:function_detail' function.id %}">Details</a>
+                        {% if function.url %}
+                            | <a href="{{ function.url }}" target="_blank">Invoke</a>
+                        {% endif %}
+                        | <a href="{% url 'functions:delete_function' function.id %}">Delete</a>
+                    </p>
+                </div>
+            {% endfor %}
     {% else %}
         <p>No functions deployed yet.</p>
     {% endif %}

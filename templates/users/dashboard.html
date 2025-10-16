@@ -10,92 +10,86 @@
     <h2 class="hello-title">Welcome to Dashboard</h2>
     <div class="form-wrapper">
         <p class="hello-text">Hello, {{ user.first_name }}!</p>
-        <p><a href="{% url 'users:profile' %}">Profile</a> | <a href="{% url 'users:logout' %}">Logout</a></p>
-    </div>
-    <title>User Dashboard</title>
-</head>
-<body>
-    <h1>Welcome, {{ user.first_name }} {{ user.last_name }}</h1>
-    <p>Email: {{ user.email }}</p>
+        <p>
+            <a href="{% url 'functions:function_list' %}">Manage Functions</a> |
+            <a href="{% url 'tarif_plan:subscription_plans' %}">Billing & Plans</a> |
+            <a href="{% url 'users:logout' %}">Logout</a>
+        </p>
 
-    {% if messages %}
-    <div>
-        {% for message in messages %}
-        <div>{{ message }}</div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        <title>User Dashboard</title>
 
-    <h2>Current Subscription</h2>
-    {% if current_subscription and current_plan %}
+        {% if messages %}
         <div>
-            <h3>{{ current_plan.name }} - ${{ current_plan.monthly_price }}/month</h3>
-            <p>Max Functions: {{ current_plan.max_functions }}</p>
-            <p>Max CPU per function: {{ current_plan.max_cpu_per_function }}m</p>
-            <p>Max Memory per function: {{ current_plan.max_memory_per_function|filesizeformat }}</p>
-            <p>Max Scale: {{ current_plan.max_scale }}</p>
-            <p>Status: {{ current_subscription.status }}</p>
-            <p>Started: {{ current_subscription.start_date|date:"M d, Y" }}</p>
-            {% if current_subscription.end_date %}
-                <p>Renews: {{ current_subscription.end_date|date:"M d, Y" }}</p>
-            {% endif %}
+            {% for message in messages %}
+            <div>{{ message }}</div>
+            {% endfor %}
         </div>
-    {% else %}
-        <p>No active subscription</p>
-    {% endif %}
+        {% endif %}
 
-    <h2>Resource Usage</h2>
-    <p>Functions deployed: {{ usage.functions_count }}</p>
-    <p>Total CPU: {{ usage.total_cpu }}m</p>
-    <p>Total Memory: {{ usage.total_memory|filesizeformat }}</p>
-
-    {% if current_plan and usage_percentage %}
-        <h3>Usage vs Plan Limits:</h3>
-        <p>Functions: {{ usage.functions_count }} / {{ current_plan.max_functions }} ({{ usage_percentage.functions|floatformat:1 }}%)</p>
-        <p>CPU per function: {{ usage.total_cpu|default:0 }} / {{ current_plan.max_cpu_per_function }}m ({{ usage_percentage.cpu|floatformat:1 }}%)</p>
-        <p>Memory per function: {{ usage.total_memory|default:0|filesizeformat }} / {{ current_plan.max_memory_per_function|filesizeformat }} ({{ usage_percentage.memory|floatformat:1 }}%)</p>
-    {% endif %}
-
-    <h2>Billing & Functions</h2>
-    <p>Estimated Monthly Cost: ${{ total_monthly_cost|floatformat:4 }}</p>
-    <p>Your Functions: {{ user_functions.count }}</p>
-
-    <h3>Your Functions:</h3>
-    {% if user_functions %}
-        {% for cost_data in function_costs %}
+        <h2>Current Subscription</h2>
+        {% if current_subscription and current_plan %}
             <div>
-                <strong>{{ cost_data.function.name }}</strong>
-                <br>
-                CPU: {{ cost_data.function.min_scale }}m
-                <br>
-                Memory: {{ cost_data.function.memory_request|default:536870912|filesizeformat }}
-                <br>
-                Status: {{ cost_data.function.status }}
-                <br>
-                <strong>Cost breakdown:</strong>
-                <br>
-                - Per minute: ${{ cost_data.costs.minute|floatformat:6 }}
-                <br>
-                - Per hour: ${{ cost_data.costs.hour|floatformat:4 }}
-                <br>
-                - Per day: ${{ cost_data.costs.day|floatformat:4 }}
-                <br>
-                - Per month: ${{ cost_data.costs.month|floatformat:4 }}
-                <br>
-
+                <h3>{{ current_plan.name }} - ${{ current_plan.monthly_price }}/month</h3>
+                <p>Max Functions: {{ current_plan.max_functions }}</p>
+                <p>Max CPU per function: {{ current_plan.max_cpu_per_function }}m</p>
+                <p>Max Memory per function: {{ current_plan.max_memory_per_function|filesizeformat }}</p>
+                <p>Max Scale: {{ current_plan.max_scale }}</p>
+                <p>Status: {{ current_subscription.status }}</p>
+                <p>Started: {{ current_subscription.start_date|date:"M d, Y" }}</p>
+                {% if current_subscription.end_date %}
+                    <p>Renews: {{ current_subscription.end_date|date:"M d, Y" }}</p>
+                {% endif %}
             </div>
-        {% endfor %}
-    {% else %}
-        <p>No functions deployed yet.</p>
-    {% endif %}
+        {% else %}
+            <p>No active subscription</p>
+        {% endif %}
 
-    <h2>Quick Actions</h2>
-    <p>
-        <a href="{% url 'functions:function_list' %}">Manage Functions</a> |
-        <a href="{% url 'users:profile' %}">Edit Profile</a> |
-        <a href="{% url 'tarif_plan:subscription_plans' %}">Billing & Plans</a> |
-        <a href="{% url 'users:logout' %}">Logout</a>
-    </p>
+        <h2>Resource Usage</h2>
+        <p>Functions deployed: {{ usage.functions_count }}</p>
+        <p>Total CPU: {{ usage.total_cpu }}m</p>
+        <p>Total Memory: {{ usage.total_memory|filesizeformat }}</p>
+
+        {% if current_plan and usage_percentage %}
+            <h3>Usage vs Plan Limits:</h3>
+            <p>Functions: {{ usage.functions_count }} / {{ current_plan.max_functions }} ({{ usage_percentage.functions|floatformat:1 }}%)</p>
+            <p>CPU per function: {{ usage.total_cpu|default:0 }} / {{ current_plan.max_cpu_per_function }}m ({{ usage_percentage.cpu|floatformat:1 }}%)</p>
+            <p>Memory per function: {{ usage.total_memory|default:0|filesizeformat }} / {{ current_plan.max_memory_per_function|filesizeformat }} ({{ usage_percentage.memory|floatformat:1 }}%)</p>
+        {% endif %}
+
+        <h2>Billing & Functions</h2>
+        <p>Estimated Monthly Cost: ${{ total_monthly_cost|floatformat:4 }}</p>
+        <p>Your Functions: {{ user_functions.count }}</p>
+
+        <h3>Your Functions:</h3>
+        {% if user_functions %}
+            {% for cost_data in function_costs %}
+                <div>
+                    <strong>{{ cost_data.function.name }}</strong>
+                    <br>
+                    CPU: {{ cost_data.function.min_scale }}m
+                    <br>
+                    Memory: {{ cost_data.function.memory_request|default:536870912|filesizeformat }}
+                    <br>
+                    Status: {{ cost_data.function.status }}
+                    <br>
+                    <strong>Cost breakdown:</strong>
+                    <br>
+                    - Per minute: ${{ cost_data.costs.minute|floatformat:6 }}
+                    <br>
+                    - Per hour: ${{ cost_data.costs.hour|floatformat:4 }}
+                    <br>
+                    - Per day: ${{ cost_data.costs.day|floatformat:4 }}
+                    <br>
+                    - Per month: ${{ cost_data.costs.month|floatformat:4 }}
+                    <br>
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No functions deployed yet.</p>
+        {% endif %}
+
+    </div>
 
     <!-- Автообновление страницы каждые 2 минуты -->
     <script>

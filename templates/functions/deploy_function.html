@@ -1,41 +1,43 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Deploy Function</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
 </head>
 <body>
     <h1>Deploy New Function</h1>
 
     <a href="{% url 'functions:function_list' %}">Back to Functions</a>
 
-    <form method="post">
-        {% csrf_token %}
+    <div class="wrapper">
+        <div class="form-wrapper">
+            <form method="post">
+                {% csrf_token %}
 
-        <div>
-            <label>Function Name:</label>
-            <input type="text" name="name" required pattern="[a-z0-9-]+" title="Only lowercase letters, numbers and hyphens allowed">
-            <div>Only lowercase English letters, numbers and hyphens allowed</div>
+                <div style="padding: 10px;">
+                    <label>Function Name:</label>
+                    <input type="text" name="name" class="form-control" required pattern="[a-z0-9-]+" placeholder="Only lowercase letters, numbers and hyphens allowed">
+                </div>
+
+                <div style="padding: 10px;">
+                    <label>Docker Image:</label>
+                    <input type="text" name="docker_image" class="form-control" required placeholder="e.g., nginx:latest, ealen/echo-server:latest">
+                </div>
+
+                <div style="padding: 10px;">
+                    <label>Min Scale:</label>
+                    <input type="number" name="min_scale" class="form-control" value="0" min="0" max="10">
+                </div>
+
+                <div style="padding: 10px;">
+                    <label>Max Scale:</label>
+                    <input type="number" name="max_scale" class="form-control" value="5" min="1" max="20">
+                </div>
+
+                <button type="submit" class="send-button">Deploy Function</button>
+            </form>
         </div>
-
-        <div>
-            <label>Docker Image:</label>
-            <input type="text" name="docker_image" required>
-            <div>e.g., nginx:latest, ealen/echo-server:latest</div>
-        </div>
-
-        <div>
-            <label>Min Scale:</label>
-            <input type="number" name="min_scale" value="0" min="0" max="10">
-            <div>Minimum pods (0 = scale to zero)</div>
-        </div>
-
-        <div>
-            <label>Max Scale:</label>
-            <input type="number" name="max_scale" value="5" min="1" max="20">
-            <div>Maximum pods</div>
-        </div>
-
-        <button type="submit">Deploy Function</button>
-    </form>
+    </div>
 </body>
 </html>

@@ -1,24 +1,26 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Function Details</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/base.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/dashboard.css' %}">
 </head>
 <body>
     <h1>Function: {{ function.name }}</h1>
 
     <a href="{% url 'functions:function_list' %}">Back to Functions</a>
 
-    <div>
-        <strong>Name:</strong> {{ function.name }}<br>
-        <strong>Status:</strong> {{ function.status }}<br>
-        <strong>Docker Image:</strong> {{ function.docker_image }}<br>
-        <strong>Scale:</strong> {{ function.min_scale }} - {{ function.max_scale }}<br>
+    <div class="form-wrapper">
+        <p><strong>Name:</strong> {{ function.name }}</p>
+        <p><strong>Status:</strong> {{ function.status }}</p>
+        <p><strong>Docker Image:</strong> {{ function.docker_image }}</p>
+        <p><strong>Scale:</strong> {{ function.min_scale }} - {{ function.max_scale }}</p>
         {% if function.url %}
-            <strong>URL:</strong> <a href="{{ function.url }}" target="_blank">{{ function.url }}</a><br>
+            <p><strong>URL:</strong> <a href="{{ function.url }}" target="_blank">{{ function.url }}</a></p>
         {% endif %}
-        <strong>Created:</strong> {{ function.created_at }}<br>
-        <strong>Updated:</strong> {{ function.updated_at }}<br>
-        <strong>Metrics:</strong>
+        <p><strong>Created:</strong> {{ function.created_at }}</p>
+        <p><strong>Updated:</strong> {{ function.updated_at }}</p>
         <table>
             <thead>
                 <tr>
