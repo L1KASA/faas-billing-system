@@ -4,6 +4,8 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import logging
 
+from faas_billing.config import config as app_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,30 +15,36 @@ class KnativeManager:
             # For local dev
             config.load_kube_config()
         except:
-            # For work in Kubernetes claster
+            # For work in Kubernetes cluster
             config.load_incluster_config()
 
         self.custom_api = client.CustomObjectsApi()
         self.core_v1 = client.CoreV1Api()
         self.metrics_api = client.CustomObjectsApi()
 
-        # Knative API configuration
-        self.knative_group = "serving.knative.dev"
-        self.knative_version = "v1"
-        self.knative_plural = "services"
-        self.namespace = "default"
+        # Knative API configuration from config
+        self.knative_group = app_config.KNATIVE_GROUP
+        self.knative_version = app_config.KNATIVE_VERSION
+        self.knative_plural = app_config.KNATIVE_PLURAL
+        self.namespace = app_config.KUBERNETES_NAMESPACE
 
-        self.metrics_group = "metrics.k8s.io"
-        self.metrics_version = "v1beta1"
-        self.metrics_plural = "pods"
+        self.metrics_group = app_config.METRICS_GROUP
+        self.metrics_version = app_config.METRICS_VERSION
+        self.metrics_plural = app_config.METRICS_PLURAL
 
-    def deploy_function(self, name, image, env_vars=None, min_scale=0, max_scale=5):
+    def deploy_function(self, name, image, env_vars=None, min_scale=None, max_scale=None):
         """Деплой функции"""
         try:
             env_list = []
             if env_vars:
                 for key, value in env_vars.items():
                     env_list.append({"name": key, "value": str(value)})
+
+            # Получаем значения из конфига
+            if min_scale is None:
+                min_scale = app_config.DEFAULT_MIN_SCALE
+            if max_scale is None:
+                max_scale = app_config.DEFAULT_MAX_SCALE
 
             knative_service = {
                 "apiVersion": f"{self.knative_group}/{self.knative_version}",
@@ -48,22 +56,12 @@ class KnativeManager:
                 "spec": {
                     "template": {
                         "metadata": {
-                            "annotations": {
-                                "autoscaling.knative.dev/minScale": str(min_scale),
-                                "autoscaling.knative.dev/maxScale": str(max_scale),
-                            }
+                            "annotations": app_config.get_default_annotations(min_scale, max_scale)
                         },
                         "spec": {
-                            "containers": [{
-                                "image": image,
-                                "env": env_list,
-                                "resources": {
-                                    "requests": {
-                                        "memory": "128Mi",
-                                        "cpu": "100m"
-                                    }
-                                }
-                            }]
+                            "containers": [
+                                app_config.get_default_container_spec(image, env_list)
+                            ]
                         }
                     }
                 }
@@ -128,27 +126,39 @@ class KnativeManager:
 
     def _convert_resource_quantity(self, quantity, resource_type):
         """Конвертирует строковое представление ресурсов Kubernetes в стандартные единицы."""
+        if not quantity:
+            return 0
+
+        quantity_str = str(quantity)
+
         if resource_type == 'cpu':
-            if quantity.endswith("n"):
-                return int(quantity.rstrip("n"))  # нанокоры
-            elif quantity.endswith("u"):
-                return int(float(quantity.rstrip("u")) * 1000)
-            elif quantity.endswith("m"):
-                return int(float(quantity.rstrip("m")) * 1000000)
+            factors = app_config.CPU_CONVERSION_FACTORS
+            if quantity_str.endswith("n"):
+                return int(quantity_str.rstrip("n")) * factors['n']
+            elif quantity_str.endswith("u"):
+                return int(float(quantity_str.rstrip("u")) * factors['u'])
+            elif quantity_str.endswith("m"):
+                return int(float(quantity_str.rstrip("m")) * factors['m'])
             else:
-                return int(quantity) * 1000000000
+                return int(float(quantity_str)) * factors['default']
 
         elif resource_type == 'memory':
-            if quantity.endswith("Ki"):
-                return int(quantity.rstrip("Ki")) * 1024
-            elif quantity.endswith("Mi"):
-                return int(quantity.rstrip("Mi")) * 1024 * 1024
-            elif quantity.endswith("Gi"):
-                return int(quantity.rstrip("Gi")) * 1024 * 1024 * 1024
-            elif quantity.endswith("M"):
-                return int(quantity.rstrip("M")) * 1000 * 1000
+            factors = app_config.MEMORY_CONVERSION_FACTORS
+            if quantity_str.endswith("Ki"):
+                return int(quantity_str.rstrip("Ki")) * factors['Ki']
+            elif quantity_str.endswith("Mi"):
+                return int(quantity_str.rstrip("Mi")) * factors['Mi']
+            elif quantity_str.endswith("Gi"):
+                return int(quantity_str.rstrip("Gi")) * factors['Gi']
+            elif quantity_str.endswith("K"):
+                return int(quantity_str.rstrip("K")) * factors['K']
+            elif quantity_str.endswith("M"):
+                return int(quantity_str.rstrip("M")) * factors['M']
+            elif quantity_str.endswith("G"):
+                return int(quantity_str.rstrip("G")) * factors['G']
             else:
-                return int(quantity)
+                return int(quantity_str) * factors['default']
+
         return 0
 
     def _get_pod_metrics(self, pod_name):
@@ -183,10 +193,11 @@ class KnativeManager:
             pod_uptime_seconds = (now - creation_time).total_seconds()
 
             start_time = None
-            for status in pod_info.status.container_statuses:
-                if status.state.running:
-                    start_time = status.state.running.started_at.astimezone(timezone.utc)
-                    break
+            if pod_info.status.container_statuses:
+                for status in pod_info.status.container_statuses:
+                    if status.state and status.state.running:
+                        start_time = status.state.running.started_at.astimezone(timezone.utc)
+                        break
 
             if start_time and creation_time:
                 cold_start_time_seconds = (start_time - creation_time).total_seconds()
@@ -215,8 +226,7 @@ class KnativeManager:
                 if "cpu" in usage:
                     cpu_usage = self._convert_resource_quantity(usage["cpu"], 'cpu')
                 if "memory" in usage:
-                    memory_usage = self._convert_resource_quantity(usage["memory"],
-                                                                   'memory')
+                    memory_usage = self._convert_resource_quantity(usage["memory"], 'memory')
 
         except ApiException as e:
             logger.warning(f"Could not get consumption metrics for pod {pod_name}: {e}")
@@ -235,7 +245,7 @@ class KnativeManager:
     def get_function_metrics(self, name):
         """Получение метрик ресурсов для функции, включая новые данные для биллинга."""
         try:
-            label_selector = f"serving.knative.dev/service={name}"
+            label_selector = app_config.get_service_label_selector(name)
 
             pods = self.core_v1.list_namespaced_pod(
                 namespace=self.namespace,
