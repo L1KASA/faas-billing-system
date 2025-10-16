@@ -1,8 +1,10 @@
 import logging
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import View, FormView, TemplateView
 from django.urls import reverse_lazy
@@ -10,9 +12,12 @@ from django.shortcuts import redirect
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, HttpResponse
 from django import forms
-from typing import Any, Dict
-from django.db import models
+from typing import Any, Dict, Optional
 
+from billing.billing_calculator import BillingCalculator
+from billing.metrics_manager import SimpleMetricsManager
+from tarif_plan.models import TariffPlan
+from tarif_plan.subscription_manager import SubscriptionManager
 from .forms import (
     UserRegistrationForm,
     ClientRegistrationForm,
@@ -23,6 +28,7 @@ from .forms import (
 from .models import User
 from .exceptions import EmailSendingError
 from .services import EmailService, UserRegistrationService, PasswordRecoveryService
+from functions.models import Function
 
 logger = logging.getLogger(__name__)
 
@@ -242,12 +248,127 @@ class PasswordResetCompleteView(TemplateView):
     template_name: str = 'users/password_reset_complete.html'
 
 
+@method_decorator(login_required, name='dispatch')
 class DashboardView(TemplateView):
-    """Dashboard view"""
+    """Dashboard view with real-time billing"""
     template_name: str = 'users/dashboard.html'
 
     def get_context_data(self, **kwargs: Any) -> Dict[str, Any]:
-        """Add user to context"""
+        """Add user, billing, and subscription data to context"""
         context: Dict[str, Any] = super().get_context_data(**kwargs)
-        context['user'] = self.request.user
+        user = self.request.user
+
+        context['user'] = user
+
+        try:
+            # Информация о подписке
+            current_subscription = SubscriptionManager.get_active_subscription(user)
+            current_plan = current_subscription.tariff_plan if current_subscription else None
+            context['current_subscription'] = current_subscription
+            context['current_plan'] = current_plan
+
+            # Доступные тарифные планы
+            plans = TariffPlan.objects.filter(is_active=True).order_by('monthly_price')
+            context['plans'] = plans
+
+            # Использование ресурсов
+            calculator = BillingCalculator(user)
+            usage = calculator._get_current_usage()
+            context['usage'] = usage
+
+            # Функции пользователя
+            user_functions = Function.objects.filter(user=user)
+            context['user_functions'] = user_functions
+
+            # Расчет стоимости в реальном времени для каждой функции
+            total_monthly_cost = Decimal('0.00')
+            function_costs = []
+
+            for function in user_functions:
+                try:
+                    # Пытаемся получить кэшированные стоимости
+                    cached_costs = SimpleMetricsManager.get_cached_costs(function, user)
+
+                    if not cached_costs:
+                        # Если нет в кэше, рассчитываем сейчас
+                        costs = SimpleMetricsManager.calculate_function_cost_now(function, user)
+                        if costs:
+                            cached_costs = {
+                                'costs': {k: float(v['total_cost']) for k, v in costs.items()},
+                                'detailed_costs': costs,
+                                'updated_at': timezone.now().isoformat()
+                            }
+
+                    if cached_costs:
+                        monthly_cost = Decimal(str(cached_costs['costs']['month']))
+                        total_monthly_cost += monthly_cost
+
+                        function_costs.append({
+                            'function': function,
+                            'monthly_cost': monthly_cost,
+                            'costs': cached_costs['costs'],
+                            'detailed_costs': cached_costs.get('detailed_costs', {}),
+                            'updated_at': cached_costs.get('updated_at', 'Never')
+                        })
+                    else:
+                        # Резервный расчет если все остальное не сработало
+                        function_metrics = function.metrics.copy() if function.metrics else {
+                            'total_cpu_request': function.min_scale * 1000,
+                            'total_memory_request': getattr(function, 'memory_request', 536870912),
+                            'overall_efficiency': 80,
+                            'cold_start_count': 0
+                        }
+
+                        cost_breakdown = calculator.calculate_function_cost(
+                            function_metrics,
+                            Decimal('720')  # 30 дней
+                        )
+
+                        monthly_cost = cost_breakdown['total_cost']
+                        total_monthly_cost += monthly_cost
+
+                        function_costs.append({
+                            'function': function,
+                            'monthly_cost': monthly_cost,
+                            'costs': {
+                                'minute': float(cost_breakdown['total_cost'] / 720 / 24 / 60),
+                                'hour': float(cost_breakdown['total_cost'] / 720 / 24),
+                                'day': float(cost_breakdown['total_cost'] / 720),
+                                'month': float(monthly_cost)
+                            },
+                            'detailed_costs': {'month': cost_breakdown},
+                            'updated_at': 'Calculated now'
+                        })
+
+                except Exception as e:
+                    logger.warning(f"Error processing function {function.name}: {str(e)}")
+                    continue
+
+            context['total_monthly_cost'] = total_monthly_cost
+            context['function_costs'] = function_costs
+
+            # Расчет использования в процентах
+            if current_plan:
+                usage_percentage = {
+                    'functions': min((usage['functions_count'] / current_plan.max_functions) * 100,
+                                     100) if current_plan.max_functions else 0,
+                    'cpu': min((usage['total_cpu'] / current_plan.max_cpu_per_function) * 100,
+                               100) if current_plan.max_cpu_per_function else 0,
+                    'memory': min((usage['total_memory'] / current_plan.max_memory_per_function) * 100,
+                                  100) if current_plan.max_memory_per_function else 0,
+                }
+                context['usage_percentage'] = usage_percentage
+
+        except Exception as e:
+            logger.error(f"Error loading dashboard data: {str(e)}")
+            # Устанавливаем значения по умолчанию в случае ошибки
+            context['current_subscription'] = None
+            context['current_plan'] = None
+            context['plans'] = TariffPlan.objects.none()
+            context['usage'] = {'functions_count': 0, 'total_cpu': 0, 'total_memory': 0}
+            context['user_functions'] = Function.objects.none()
+            context['total_monthly_cost'] = Decimal('0.00')
+            context['function_costs'] = []
+            context['usage_percentage'] = {'functions': 0, 'cpu': 0, 'memory': 0}
+
         return context

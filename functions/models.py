@@ -12,7 +12,7 @@ class Function(models.Model):
         DELETING = 'DELETING', 'Deleting'
 
     name = models.CharField(max_length=100, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='functions')
     docker_image = models.CharField(max_length=500)
     status = models.CharField(max_length=20, choices=FunctionStatus.choices, default=FunctionStatus.DEPLOYING)
     knative_service_name = models.CharField(max_length=100)
@@ -25,7 +25,7 @@ class Function(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    metrics = models.JSONField(default={})
+    metrics = models.JSONField(default=dict)
 
     def __str__(self):
         return self.name
