@@ -50,7 +50,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
-    'functions'
+    'functions',
+    'billing',
+    'tarif_plan',
 ]
 
 MIDDLEWARE = [

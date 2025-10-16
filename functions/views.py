@@ -1,15 +1,10 @@
-from collections import Counter
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.generic import ListView, DetailView
 
 from .models import Function
 from .knative_manager import KnativeManager
-
-import json
 
 
 @login_required
@@ -43,9 +38,15 @@ def deploy_function(request):
         min_scale = int(request.POST.get('min_scale', 0))
         max_scale = int(request.POST.get('max_scale', 5))
 
+        docker_image = docker_image.strip()
+
         # Проверяем, существует ли уже функция с таким именем
         if Function.objects.filter(name=name).exists():
             messages.error(request, f'Function with name "{name}" already exists.')
+            return render(request, 'functions/deploy_function.html')
+
+        if ' ' in docker_image:
+            messages.error(request, 'Docker image name cannot contain spaces')
             return render(request, 'functions/deploy_function.html')
 
         # Создаем запись в базе

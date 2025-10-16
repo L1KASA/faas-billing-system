@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Subscription Plans</title>
+</head>
+<body>
+    <h1>Subscription Plans</h1>
+
+    {% if current_subscription and current_plan %}
+        <h2>Current Plan: {{ current_plan.name }}</h2>
+        <p>Price: ${{ current_plan.monthly_price }}/month</p>
+        <ul>
+            <li>Max Functions: {{ current_plan.max_functions }}</li>
+            <li>Max CPU: {{ current_plan.max_cpu_per_function }}m</li>
+            <li>Max Memory: {{ current_plan.max_memory_per_function }} bytes</li>
+            <li>Max Scale: {{ current_plan.max_scale }}</li>
+        </ul>
+        <p><strong>CURRENT PLAN</strong></p>
+    {% else %}
+        <p>No active subscription</p>
+    {% endif %}
+
+    <h2>Available Plans</h2>
+
+    {% for plan in plans %}
+        <div>
+            <h3>{{ plan.name }}</h3>
+            <p>Price: ${{ plan.monthly_price }}/month</p>
+            <ul>
+                <li>Max Functions: {{ plan.max_functions }}</li>
+                <li>Max CPU: {{ plan.max_cpu_per_function }}m</li>
+                <li>Max Memory: {{ plan.max_memory_per_function }} bytes</li>
+                <li>Max Scale: {{ plan.max_scale }}</li>
+                {% if plan.includes_support %}<li>Priority Support</li>{% endif %}
+                {% if plan.includes_analytics %}<li>Advanced Analytics</li>{% endif %}
+                {% if plan.includes_sla %}<li>SLA Guarantee</li>{% endif %}
+            </ul>
+
+            {% if not current_plan or plan != current_plan %}
+                <form action="/tarif_plan/change/" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="plan_tier" value="{{ plan.tier }}">
+                    <button type="submit">
+                        {% if current_subscription %}Upgrade{% else %}Subscribe{% endif %}
+                    </button>
+                </form>
+            {% endif %}
+            <hr>
+        </div>
+    {% endfor %}
+
+    <h3>Current Usage</h3>
+    <ul>
+        <li>Functions: {{ usage.functions_count }}</li>
+        <li>CPU: {{ usage.total_cpu }}m</li>
+        <li>Memory: {{ usage.total_memory }} bytes</li>
+    </ul>
+</body>
+</html>

@@ -31,7 +31,7 @@ class KnativeManager:
         self.metrics_plural = "pods"
 
     def deploy_function(self, name, image, env_vars=None, min_scale=0, max_scale=5):
-        """Деплой функции в Knative"""
+        """Деплой функции"""
         try:
             env_list = []
             if env_vars:
